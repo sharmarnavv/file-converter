@@ -1,3 +1,2 @@
-aspose-words
-aspose-slides
+dotenv
 tqdm

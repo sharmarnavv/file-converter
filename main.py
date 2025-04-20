@@ -1,45 +1,45 @@
 import os
-import aspose.words as aw
-import aspose.slides as slides
+import subprocess
+from dotenv import load_dotenv
 from tqdm import tqdm
 
-def convert(path):
-    try:
-        if path.endswith(('.docx', '.doc')):
-            doc = aw.Document(path)
-            pdfPath = os.path.splitext(path)[0] + '.pdf'
-            doc.save(pdfPath)
-            print(f"Converted: {path}")
-        elif path.endswith(('.pptx', '.ppt')):
-            presentation = slides.Presentation(path)
-            pdfPath = os.path.splitext(path)[0] + '.pdf'
-            presentation.save(pdfPath, slides.export.SaveFormat.PDF)
-            print(f"Converted: {path}")
-    except Exception as e:
-        print(f"Failed to convert {path}: {e}")
+load_dotenv()
 
-def collect_files(path, files):
+LIBREOFFICE_PATH = os.getenv("LIBREOFFICE_PATH")
+
+if not LIBREOFFICE_PATH or not os.path.isfile(LIBREOFFICE_PATH):
+    print("❌ Error: LIBREOFFICE_PATH is not set correctly in your .env file.")
+    print("Expected an absolute path to soffice.exe, like: D:\\files\\LibreOffice\\program\\soffice.exe")
+    exit(1)
+
+def convert(input_file):
     try:
-        for item in os.listdir(path):
-            item_path = os.path.join(path, item)
-            if os.path.isfile(item_path):
-                _, ext = os.path.splitext(item_path)
-                if ext.lower() in ('.doc', '.docx', '.ppt', '.pptx'):
-                    files.append(item_path)
-            elif os.path.isdir(item_path):
-                collect_files(item_path, files)
-    except FileNotFoundError:
-        print(f"Directory not found at '{path}'")
+        subprocess.run([
+            LIBREOFFICE_PATH,
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", os.path.dirname(input_file),
+            input_file
+        ], check=True)
+        print(f"\nConverted: {input_file}")
+    except subprocess.CalledProcessError as e:
+        print(f"\nFailed to convert {input_file}: {e}")
+
+def collect_files(path, extensions):
+    collected = []
+    for root, _, files in os.walk(path):
+        for file in files:
+            if file.lower().endswith(extensions):
+                collected.append(os.path.join(root, file))
+    return collected
 
 def driver(path, delete=False):
-    files = []
-    collect_files(path, files)
-
+    files = collect_files(path, ('.docx', '.doc', '.pptx', '.ppt'))
     if not files:
-        print("No files found for conversion.")
+        print("No files to convert.")
         return
 
-    for file in tqdm(files, desc="Converting Files"):
+    for file in tqdm(files, desc="Converting"):
         convert(file)
         if delete:
             os.remove(file)
