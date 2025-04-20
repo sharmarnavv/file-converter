@@ -1,4 +1,4 @@
-# College File Converter
+# File Converter
 
 A simple script to help me deal with all those annoying file types I get when downloading stuff from my college website. Converts DOC/DOCX and PPT/PPTX files to PDF automatically.
 
