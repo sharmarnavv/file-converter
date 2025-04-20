@@ -1,0 +1,3 @@
+aspose-words
+aspose-slides
+tqdm
